@@ -9,10 +9,21 @@ from sqlalchemy import create_engine
 import os
 from dotenv import load_dotenv
 import openai
+from fastapi.middleware.cors import CORSMiddleware
+
 
 load_dotenv()
 
 app = FastAPI()
+
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
 
@@ -66,8 +77,6 @@ async def query_database(request: QueryRequest):
         raise HTTPException(
             status_code=500, detail="Database connection error.")
 
-    steps.append(Step(step="Initializing SQL Agent",
-                      detail="Creating SQL agent with the retrieved schema."))
     try:
         agent = create_sql_agent(
             llm=llm,
@@ -75,8 +84,6 @@ async def query_database(request: QueryRequest):
             agent_type="openai-tools",
             callbacks=[callback_handler]
         )
-        steps.append(Step(step="SQL Agent Initialized",
-                          detail="SQL agent is ready to generate queries."))
     except Exception as e:
         steps.append(Step(step="Error Initializing Agent", detail=str(e)))
         raise HTTPException(
